@@ -1,93 +1,73 @@
-const tools = [
-  { name: "Rake", img: "images/rake.png" },
-  { name: "Hoe", img: "images/hoe.png" },
-  { name: "Shovel", img: "images/shovel.png" },
-  { name: "Tractor", img: "images/tractor.png" },
-  { name: "Plow", img: "images/plow.png" },
-  { name: "Watering Can", img: "images/wateringcan.png" },
-  { name: "Sickle", img: "images/sickle.png" },
-  { name: "Wheelbarrow", img: "images/wheelbarrow.png" }
+  const tools = [
+  "Rake", "Shovel", "Hoe", "Watering Can", 
+  "Tractor", "Wheelbarrow", "Scythe", "Pitchfork"
 ];
 
-let gameBoard = document.getElementById("game-board");
-let movesCounter = document.getElementById("moves");
-let matchesCounter = document.getElementById("matches");
-let restartBtn = document.getElementById("restart");
+// Duplicate the array for matching pairs
+let cardValues = [...tools, ...tools];
+cardValues.sort(() => 0.5 - Math.random());
 
-let firstCard, secondCard;
-let lockBoard = false;
-let moves = 0;
-let matches = 0;
+const gameBoard = document.getElementById("gameBoard");
+let flippedCards = [];
+let matchedCards = [];
 
-function setupBoard() {
-  let cards = [...tools, ...tools]; // duplicate for pairs
-  cards.sort(() => 0.5 - Math.random());
-
-  gameBoard.innerHTML = "";
-  cards.forEach(tool => {
-    let card = document.createElement("div");
+function createCards() {
+  gameBoard.innerHTML = ""; // clear board
+  cardValues.forEach((tool, index) => {
+    const card = document.createElement("div");
     card.classList.add("card");
-    card.innerHTML = `
-      <div class="front">🌱</div>
-      <div class="back"><img src="${tool.img}" alt="${tool.name}" title="${tool.name}"></div>
-    `;
-    card.dataset.name = tool.name;
-    card.addEventListener("click", flipCard);
+    card.dataset.tool = tool;
+
+    const front = document.createElement("div");
+    front.classList.add("front");
+    front.innerText = tool; // you can replace with image later
+
+    const back = document.createElement("div");
+    back.classList.add("back");
+    back.innerText = "🌾"; // fun farm emoji for back
+
+    card.appendChild(front);
+    card.appendChild(back);
+
+    card.addEventListener("click", () => flipCard(card));
     gameBoard.appendChild(card);
   });
-
-  moves = 0;
-  matches = 0;
-  movesCounter.textContent = moves;
-  matchesCounter.textContent = matches;
 }
 
-function flipCard() {
-  if (lockBoard) return;
-  if (this === firstCard) return;
+function flipCard(card) {
+  if (flippedCards.length < 2 && !card.classList.contains("flip")) {
+    card.classList.add("flip");
+    flippedCards.push(card);
 
-  this.classList.add("flip");
-
-  if (!firstCard) {
-    firstCard = this;
-    return;
+    if (flippedCards.length === 2) {
+      checkMatch();
+    }
   }
-
-  secondCard = this;
-  checkMatch();
 }
 
 function checkMatch() {
-  let isMatch = firstCard.dataset.name === secondCard.dataset.name;
-  isMatch ? disableCards() : unflipCards();
-
-  moves++;
-  movesCounter.textContent = moves;
+  const [card1, card2] = flippedCards;
+  if (card1.dataset.tool === card2.dataset.tool) {
+    matchedCards.push(card1, card2);
+    flippedCards = [];
+    if (matchedCards.length === cardValues.length) {
+      setTimeout(() => alert("🎉 You matched all tools!"), 300);
+    }
+  } else {
+    setTimeout(() => {
+      card1.classList.remove("flip");
+      card2.classList.remove("flip");
+      flippedCards = [];
+    }, 1000);
+  }
 }
 
-function disableCards() {
-  firstCard.removeEventListener("click", flipCard);
-  secondCard.removeEventListener("click", flipCard);
-  matches++;
-  matchesCounter.textContent = matches;
+document.getElementById("restartBtn").addEventListener("click", () => {
+  cardValues.sort(() => 0.5 - Math.random());
+  flippedCards = [];
+  matchedCards = [];
+  createCards();
+});
 
-  resetBoard();
-}
-
-function unflipCards() {
-  lockBoard = true;
-  setTimeout(() => {
-    firstCard.classList.remove("flip");
-    secondCard.classList.remove("flip");
-    resetBoard();
-  }, 1000);
-}
-
-function resetBoard() {
-  [firstCard, secondCard] = [null, null];
-  lockBoard = false;
-}
-
-restartBtn.addEventListener("click", setupBoard);
-
-setupBoard();
+// Initialize the game
+createCards();
